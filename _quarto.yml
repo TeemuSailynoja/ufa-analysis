@@ -23,7 +23,6 @@ format:
       light:
         - flatly
         - theme-light.scss
-    css: styles.css
     toc: true
     self-contained-math: true
     embed-resources: true

@@ -1,0 +1,29 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "Analysis of Ultimate Frisbee"
+  navbar:
+    left:
+      - href: index.qmd
+        text: UFA
+    right:
+      - icon: linkedin
+        href: https://www.linkedin.com/in/teemu-sailynoja/
+      - icon: github
+        href: https://github.com/TeemuSailynoja/ufa-analysis
+
+format:
+  html:
+    theme:
+      dark:
+        - darkly
+        - theme-dark.scss
+      light:
+        - flatly
+        - theme-light.scss
+    css: styles.css
+    toc: true
+    self-contained-math: true
+    embed-resources: true

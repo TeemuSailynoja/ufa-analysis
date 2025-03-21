@@ -1,0 +1,73 @@
+---
+title: "UFA Analysis"
+author: "Teemu Säilynoja"
+date: 21-03-2025
+date-modified: today
+format:
+  html:
+    code-tools: true
+    toc-title: " "
+execute:
+  warning: false
+  message: false
+  echo: false
+
+---
+
+```{r}
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+```
+
+```{r}
+full_data <-
+  read.csv2("data/all_games_1024.csv", sep = ",") |>
+  mutate(across(
+    everything(),
+    .fns = \(x) type.convert(x, as.is = TRUE)
+  )) |>
+  mutate(
+    is_home_team = is_home_team == "True"
+  )
+
+```
+
+This post got inspired by the publication of a dataset containing details on `r nrow(full_data)` passes from `r length(unique(full_data$gameID))` games, played during the 2021 to 2024 seasons of the professional league by Ultimate Frisbee Association (UFA). The dataset was published together with a 2025 sports analytics paper on [estimating player value and decision making in ultimate frisbee](https://www.sloansportsconference.com/research-papers/a-machine-learning-approach-to-throw-value-estimation-in-professional-ultimate-frisbee), by Eberhard, Miller, and Sandholz.
+
+In our team, we have often wondered *how much does a good pull actually affect the offense*, and celebrated when an opponent takes a timeout, as *the most likely pass for the offense to lose possession is right after a time out*. With this dataset, I can put some numbers behind these questions and claims!
+
+
+## Effect of pulls
+The dataset contains `r n_points <- full_data |> filter(possession_throw == 1, possession_num == 1) |> nrow(); n_points` played points. Of these, `r n_bricks <- full_data |> filter(possession_throw == 1, possession_num == 1, thrower_x == 0, thrower_y == 40) |> nrow(); n_bricks` start with the offense on the brick mark. That is, **`r round(100 * n_bricks / n_points, 1)`% of the pulls in the dataset went out of bounds**.
+
+But did the offense benefit from these bad pulls, and what about the effect of the very good pulls?
+
+```{r}
+#| caption: When we consider a pull to be good, if it lands away from the middle half of the field and inside the end-zone
+ pull_results <- full_data |>
+  group_by(
+    gameID, total_points
+  ) |>
+  summarise(
+    start_type = if (thrower_x[1] == 0 & thrower_y[1] == 40) {"Brick"} else if (abs(thrower_x[1]) > 13.33 & thrower_y[1] < 20) {"Good"} else {"Meh"},
+    is_offense_goal = is_home_team[1] == tail(is_home_team, 1)) |>
+  ungroup() |>
+  group_by(start_type) |>
+  summarise(
+    offense_scoring_rate = round(100 * mean(is_offense_goal), 1),
+    n = n()
+  )
+  pull_results[c(2,3,1), ] |>
+  kbl(
+    digits = 2,
+    label = NA,
+    col.names = c("Pull result", "Offense held (%)", "Num. points"),
+    table.attr = 'data-quarto-disable-processing="true"',
+    caption = "A good pull is noticeably more likely to result in a break."
+  ) |>
+  kable_styling(full_width = FALSE)
+```
+Above, I consider a good pull to land inside the end-zone on either of the horizontal quarters closest to the sideline. On average, these seem to result in 20% more breaks. A mediocre pull does not fare much better than a bricked one, so if you have any hope of landing the pull at the sides of the end-zone, go for it! The effect of nailing **every** pull is quite small, 0.75 breaks per 15 defense points, but often^[This could be another question to look at.] one break is all you need. 
+

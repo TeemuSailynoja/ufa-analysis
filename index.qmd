@@ -142,8 +142,8 @@ ggplot(pulls) +
   
 ```
 
-The dataset contains `r nrow(pulls)` played points. Of these, `r
-sum(pulls$start_type %in% c("Brick", "Failed"))` start with the offense
+The dataset contains `r nrow(pulls)` played points. Of these, `r sum(
+pulls$start_type %in% c("Brick", "Failed"))` start with the offense
 on the brick mark, or further on the field. That is, **`r round(100 *
 mean(pulls$start_type %in% c("Brick", "Failed")), 1)`% of the offenses in the
 dataset started from the brick mark, or closer to the opposing end-zone**.

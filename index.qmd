@@ -59,14 +59,19 @@ full_data <-
 
 ```
 
-This post got inspired by the publication of a dataset containing details on `r nrow(full_data)` passes from `r length(unique(full_data$gameID))` games,
-played during the 2021 to 2024 seasons of the professional league by Ultimate Frisbee Association (UFA).
-The dataset was published together with a 2025 sports analytics paper on
-[estimating player value and decision making in ultimate frisbee](https://www.sloansportsconference.com/research-papers/a-machine-learning-approach-to-throw-value-estimation-in-professional-ultimate-frisbee),
-by Eberhard, Miller, and Sandholz.
+This post got inspired by the publication of a dataset containing details on
+`r nrow(full_data)` passes from `r length(unique(full_data$gameID))` games,
+played during the 2021 to 2024 seasons of the professional league by Ultimate
+Frisbee Association (UFA). The dataset was published together with a 2025 sports
+analytics paper on [estimating player value and decision making in ultimate
+frisbee](https://www.sloansportsconference.com/research-papers/a-machine-learnin
+g-approach-to-throw-value-estimation-in-professional-ultimate-frisbee), by
+Eberhard, Miller, and Sandholz.
 
-I have often wondered *how much does a good pull actually affect the offense*, and celebrated when an opponent takes a timeout, as *the most likely pass for the offense to lose possession is right after a time out*.
-With this dataset, I can put some numbers behind these questions and claims!
+I have often wondered *how much does a good pull actually affect the offense*,
+and celebrated when an opponent takes a timeout, as *the most likely pass for
+the offense to lose possession is right after a time out*. With this dataset, I
+can put some numbers behind these questions and claims!
 
 
 ## Effect of pulls
@@ -88,7 +93,9 @@ With this dataset, I can put some numbers behind these questions and claims!
         "Failed"
       }
     },
-    is_offense_goal = (is_home_team[1] == tail(is_home_team, 1)) & tail(receiver_y,1) > 100,
+    is_offense_goal = {
+      (is_home_team[1] == tail(is_home_team, 1)) & tail(receiver_y,1) > 100
+    },
     x = thrower_x[1],
     y = thrower_y[1],
     .groups = "drop")
@@ -122,7 +129,10 @@ ggplot(pulls) +
     legend.text = element_text(colour = palette$gray, size = 28),
     legend.title = element_text(colour = palette$gray, size = 32)) +
   scale_color_manual(
-    values = c("Good" = palette$yellow, "OK" = palette$orange, "Brick" = palette$lblue, "Failed" = palette$red)
+    values = c("Good" = palette$yellow,
+               "OK" = palette$orange,
+               "Brick" = palette$lblue,
+              "Failed" = palette$red)
   ) +
   guides(
     color = guide_legend(override.aes = list(size = 5, alpha = 1)),
@@ -132,11 +142,14 @@ ggplot(pulls) +
   
 ```
 
-The dataset contains `r nrow(pulls)` played points.
-Of these, `r sum(pulls$start_type %in% c("Brick", "Failed"))` start with the offense on the brick mark, or further on the field.
-That is, **`r round(100 * mean(pulls$start_type %in% c("Brick", "Failed")), 1)`% of the offenses in the dataset started from the brick mark, or closer to the opposing end-zone**.
+The dataset contains `r nrow(pulls)` played points. Of these, `r
+sum(pulls$start_type %in% c("Brick", "Failed"))` start with the offense
+on the brick mark, or further on the field. That is, **`r round(100 *
+mean(pulls$start_type %in% c("Brick", "Failed")), 1)`% of the offenses in the
+dataset started from the brick mark, or closer to the opposing end-zone**.
 
-But did the offense benefit from these bad pulls, and what about the effect of the very good pulls?
+But did the offense benefit from these bad pulls, and what about the effect of
+the very good pulls?
 
 ```{r}
 pull_results <- pulls |>
@@ -156,14 +169,20 @@ pull_results <- pulls |>
   kable_styling(full_width = FALSE)
 ```
 
-Above, I consider a good pull to heightinside the end-zonwidthither of the horizontal quarters closest to the sideline. If the pull doesn't make it past the brick mark, I mark it as a failed one. On average, good pulls seem to result in
+Above, I consider a good pull to heightinside the end-zonwidthither of the
+horizontal quarters closest to the sideline. If the pull doesn't make it past
+the brick mark, I mark it as a failed one. On average, good pulls seem to result
+in
 `r 100 * round(
   (
-    mean(pulls[pulls$start_type != "Good", ]$is_offense_goal) - mean(pulls[pulls$start_type == "Good", ]$is_offense_goal)
+    mean(pulls[pulls$start_type != "Good", ]$is_offense_goal) -
+      mean(pulls[pulls$start_type == "Good", ]$is_offense_goal)
   ) / (
     1 - mean(pulls[pulls$start_type != "Good", ]$is_offense_goal)
   ),2)`%
-more breaks. A mediocre pull does not fare much better than a bricked one, so as long as the pull gets past the brick mark, it seems to be worth it to go for the corners!
+more breaks. A mediocre pull does not fare much better than a bricked one, so
+as long as the pull gets past the brick mark, it seems to be worth it to go for
+the corners!
 
 Although, even the effect of nailing ***every*** pull in a match is quite small;
 `r round(
@@ -184,5 +203,13 @@ Although, even the effect of nailing ***every*** pull in a match is quite small;
                      tail(away_team_score, 1))) |>
   pull(points) |>
   mean(), 0)`
- defense points played per match, but often^[Of the recorded matches, `r 100 * round((full_data |> group_by(gameID) |> summarise(score_diff_one = abs(tail(score_diff, 1)) == 1)) |> pull(score_diff_one) |> mean(), 1)`% ended in a score difference of one.] that one break is all your team needs. 
+ defense points played per match, but often^[Of the recorded matches,
+  `r 100 * round(
+    full_data |>
+      group_by(gameID) |>
+      summarise(score_diff_one = abs(tail(score_diff, 1)) == 1) |>
+      pull(score_diff_one) |>
+      mean(),
+    1
+  )`% ended in a score difference of one.] that one break is all your team needs.
 

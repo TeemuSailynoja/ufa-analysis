@@ -1,7 +1,7 @@
 ---
 title: "UFA Analysis"
 author: "Teemu Säilynoja"
-date: 21-03-2025
+date: 2025/03/21
 date-modified: today
 format:
   html:

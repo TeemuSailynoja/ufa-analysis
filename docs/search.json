@@ -4,20 +4,13 @@
     "href": "index.html",
     "title": "UFA Analysis",
     "section": "",
-    "text": "This post got inspired by the publication of a dataset containing details on 290826 passes from 574 games, played during the 2021 to 2024 seasons of the professional league by Ultimate Frisbee Association (UFA). The dataset was published together with a 2025 sports analytics paper on estimating player value and decision making in ultimate frisbee, by Eberhard, Miller, and Sandholz.\nIn our team, we have often wondered how much does a good pull actually affect the offense, and celebrated when an opponent takes a timeout, as the most likely pass for the offense to lose possession is right after a time out. With this dataset, I can put some numbers behind these questions and claims!"
+    "text": "This post got inspired by the publication of a dataset containing details on 290826 passes from 574 games, played during the 2021 to 2024 seasons of the professional league by Ultimate Frisbee Association (UFA). The dataset was published together with a 2025 sports analytics paper on estimating player value and decision making in ultimate frisbee, by Eberhard, Miller, and Sandholz.\nI have often wondered how much does a good pull actually affect the offense, and celebrated when an opponent takes a timeout, as the most likely pass for the offense to lose possession is right after a time out. With this dataset, I can put some numbers behind these questions and claims!"
   },
   {
     "objectID": "index.html#effect-of-pulls",
     "href": "index.html#effect-of-pulls",
     "title": "UFA Analysis",
     "section": "Effect of pulls",
-    "text": "Effect of pulls\nThe dataset contains 33552 played points. Of these, 1940 start with the offense on the brick mark. That is, 5.8% of the pulls in the dataset went out of bounds.\nBut did the offense benefit from these bad pulls, and what about the effect of the very good pulls?\n\n\n\nA good pull is noticeably more likely to result in a break.\n \n  \n    Pull result \n    Offense held (%) \n    Num. points \n  \n \n\n  \n    Good \n    65.7 \n    2894 \n  \n  \n    Meh \n    69.4 \n    17487 \n  \n  \n    Brick \n    70.1 \n    1603 \n  \n\n\n\n\n\nAbove, I consider a good pull to land inside the end-zone on either of the horizontal quarters closest to the sideline. On average, these seem to result in 20% more breaks. A mediocre pull does not fare much better than a bricked one, so if you have any hope of landing the pull at the sides of the end-zone, go for it! The effect of nailing every pull is quite small, 0.75 breaks per 15 defense points, but often1 one break is all you need."
-  },
-  {
-    "objectID": "index.html#footnotes",
-    "href": "index.html#footnotes",
-    "title": "UFA Analysis",
-    "section": "Footnotes",
-    "text": "Footnotes\n\n\nThis could be another question to look at.↩︎"
+    "text": "Effect of pulls\n\n\n\n\n\n\n\n\n\nFigure 1: How I classified the pull results for this analysis.\n\n\n\n\nThe dataset contains 23225 played points. Of these, 5251 start with the offense on the brick mark, or further on the field. That is, 22.6% of the offenses in the dataset started from the brick mark, or closer to the opposing end-zone.\nBut did the offense benefit from these bad pulls, and what about the effect of the very good pulls?\n\n\n\nA good pull is noticeably more likely to result in a break.\n \n  \n    Pull result \n    Offense held (%) \n    Num. points \n  \n \n\n  \n    Good \n    61.2 \n    3287 \n  \n  \n    OK \n    66.7 \n    14687 \n  \n  \n    Brick \n    68.5 \n    1699 \n  \n  \n    Failed \n    69.5 \n    3552 \n  \n\n\n\n\n\nAbove, I consider a good pull to heightinside the end-zonwidthither of the horizontal quarters closest to the sideline. If the pull doesn’t make it past the brick mark, I mark it as a failed one. On average, good pulls seem to result in 19% more breaks. A mediocre pull does not fare much better than a bricked one, so as long as the pull gets past the brick mark, it seems to be worth it to go for the corners!\nAlthough, even the effect of nailing every pull in a match is quite small; 1.15 extra breaks per the average 19 defense points played per match, but often1 that one break is all your team needs.\n\n\n\n\n1 Of the recorded matches, 20% ended in a score difference of one."
   }
 ]

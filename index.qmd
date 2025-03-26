@@ -7,21 +7,46 @@ format:
   html:
     code-tools: true
     toc-title: " "
+    reference-location: margin
+    citation-location: margin
+    
 execute:
   warning: false
   message: false
   echo: false
+  cache: true
 
+knitr:
+  opts_chunk:
+    dev: svg
+    dev.args: { bg: "transparent" }
+    fig.path: ./figures/
 ---
 
 ```{r}
+#| label: imports
+#| cache: false
 library(dplyr)
+library(ggplot2)
 library(knitr)
 library(kableExtra)
 
+palette <- list(
+  red = "#bf616a",
+  orange = "#d08770",
+  yellow = "#ebcb8b",
+  green = "#a3be8c",
+  purple = "#b48ead",
+  lblue = "#88c0d0",
+  dblue = "#81a1c1",
+  white = "#d8dee9",
+  black = "#3b4252",
+  gray = "#8699bb"
+)
 ```
 
 ```{r}
+#| label: data_loading
 full_data <-
   read.csv2("data/all_games_1024.csv", sep = ",") |>
   mutate(across(
@@ -34,32 +59,93 @@ full_data <-
 
 ```
 
-This post got inspired by the publication of a dataset containing details on `r nrow(full_data)` passes from `r length(unique(full_data$gameID))` games, played during the 2021 to 2024 seasons of the professional league by Ultimate Frisbee Association (UFA). The dataset was published together with a 2025 sports analytics paper on [estimating player value and decision making in ultimate frisbee](https://www.sloansportsconference.com/research-papers/a-machine-learning-approach-to-throw-value-estimation-in-professional-ultimate-frisbee), by Eberhard, Miller, and Sandholz.
+This post got inspired by the publication of a dataset containing details on `r nrow(full_data)` passes from `r length(unique(full_data$gameID))` games,
+played during the 2021 to 2024 seasons of the professional league by Ultimate Frisbee Association (UFA).
+The dataset was published together with a 2025 sports analytics paper on
+[estimating player value and decision making in ultimate frisbee](https://www.sloansportsconference.com/research-papers/a-machine-learning-approach-to-throw-value-estimation-in-professional-ultimate-frisbee),
+by Eberhard, Miller, and Sandholz.
 
-In our team, we have often wondered *how much does a good pull actually affect the offense*, and celebrated when an opponent takes a timeout, as *the most likely pass for the offense to lose possession is right after a time out*. With this dataset, I can put some numbers behind these questions and claims!
+I have often wondered *how much does a good pull actually affect the offense*, and celebrated when an opponent takes a timeout, as *the most likely pass for the offense to lose possession is right after a time out*.
+With this dataset, I can put some numbers behind these questions and claims!
 
 
 ## Effect of pulls
-The dataset contains `r n_points <- full_data |> filter(possession_throw == 1, possession_num == 1) |> nrow(); n_points` played points. Of these, `r n_bricks <- full_data |> filter(possession_throw == 1, possession_num == 1, thrower_x == 0, thrower_y == 40) |> nrow(); n_bricks` start with the offense on the brick mark. That is, **`r round(100 * n_bricks / n_points, 1)`% of the pulls in the dataset went out of bounds**.
+```{r}
+#| label: pulls_data
+ pulls <- full_data |>
+  group_by(
+    gameID, total_points, game_quarter
+  ) |>
+  summarise(
+    start_type = {
+      if (thrower_x[1] == 0 & thrower_y[1] == 40) {
+        "Brick"
+      } else if ((abs(thrower_x[1]) > 15 & thrower_y[1] < 15) | thrower_y[1] < 7) {
+        "Good"
+      } else if (thrower_y[1] < 40) {
+        "OK"
+      } else {
+        "Failed"
+      }
+    },
+    is_offense_goal = (is_home_team[1] == tail(is_home_team, 1)) & tail(receiver_y,1) > 100,
+    x = thrower_x[1],
+    y = thrower_y[1],
+    .groups = "drop")
+```
+
+```{r}
+#| label: fig-pull-results
+#| cache: false
+#| fig-height: 16
+#| fig-width: 8
+#| fig-cap: How I classified the pull results for this analysis.
+#| column: margin
+ggplot(pulls) +
+  geom_tile(
+    aes(x = 0, y = c(10, 110, 60), height = c(20, 20, 80), width = 54),
+    data = data.frame(),
+    fill = palette$green,
+    color = palette$white,
+    linewidth = 2
+  ) +
+  geom_point(
+    aes(x, y,
+        color = factor(start_type, levels = c("Good", "OK", "Brick", "Failed")),
+        size = I(ifelse(start_type == "Brick", 4, 2))),
+    alpha = .5
+  ) +
+  coord_equal(xlim = c(-27.5, 27.5), ylim = c(-0.5,120.5), expand = FALSE) +
+  theme_void(base_family="sans") +
+  theme(
+    legend.position = "bottom",
+    legend.text = element_text(colour = palette$gray, size = 28),
+    legend.title = element_text(colour = palette$gray, size = 32)) +
+  scale_color_manual(
+    values = c("Good" = palette$yellow, "OK" = palette$orange, "Brick" = palette$lblue, "Failed" = palette$red)
+  ) +
+  guides(
+    color = guide_legend(override.aes = list(size = 5, alpha = 1)),
+    size = "none"
+  ) +
+  labs(color = "Pull result: ")
+  
+```
+
+The dataset contains `r nrow(pulls)` played points.
+Of these, `r sum(pulls$start_type %in% c("Brick", "Failed"))` start with the offense on the brick mark, or further on the field.
+That is, **`r round(100 * mean(pulls$start_type %in% c("Brick", "Failed")), 1)`% of the offenses in the dataset started from the brick mark, or closer to the opposing end-zone**.
 
 But did the offense benefit from these bad pulls, and what about the effect of the very good pulls?
 
 ```{r}
-#| caption: When we consider a pull to be good, if it lands away from the middle half of the field and inside the end-zone
- pull_results <- full_data |>
-  group_by(
-    gameID, total_points
-  ) |>
-  summarise(
-    start_type = if (thrower_x[1] == 0 & thrower_y[1] == 40) {"Brick"} else if (abs(thrower_x[1]) > 13.33 & thrower_y[1] < 20) {"Good"} else {"Meh"},
-    is_offense_goal = is_home_team[1] == tail(is_home_team, 1)) |>
-  ungroup() |>
+pull_results <- pulls |>
   group_by(start_type) |>
   summarise(
     offense_scoring_rate = round(100 * mean(is_offense_goal), 1),
     n = n()
   )
-  pull_results[c(2,3,1), ] |>
+  pull_results[c(3,4,1,2), ] |>
   kbl(
     digits = 2,
     label = NA,
@@ -69,5 +155,34 @@ But did the offense benefit from these bad pulls, and what about the effect of t
   ) |>
   kable_styling(full_width = FALSE)
 ```
-Above, I consider a good pull to land inside the end-zone on either of the horizontal quarters closest to the sideline. On average, these seem to result in 20% more breaks. A mediocre pull does not fare much better than a bricked one, so if you have any hope of landing the pull at the sides of the end-zone, go for it! The effect of nailing **every** pull is quite small, 0.75 breaks per 15 defense points, but often^[This could be another question to look at.] one break is all you need. 
+
+Above, I consider a good pull to heightinside the end-zonwidthither of the horizontal quarters closest to the sideline. If the pull doesn't make it past the brick mark, I mark it as a failed one. On average, good pulls seem to result in
+`r 100 * round(
+  (
+    mean(pulls[pulls$start_type != "Good", ]$is_offense_goal) - mean(pulls[pulls$start_type == "Good", ]$is_offense_goal)
+  ) / (
+    1 - mean(pulls[pulls$start_type != "Good", ]$is_offense_goal)
+  ),2)`%
+more breaks. A mediocre pull does not fare much better than a bricked one, so as long as the pull gets past the brick mark, it seems to be worth it to go for the corners!
+
+Although, even the effect of nailing ***every*** pull in a match is quite small;
+`r round(
+  (full_data |>
+  group_by(gameID) |>
+  reframe(points = c(tail(home_team_score,1),
+                     tail(away_team_score, 1))) |>
+  pull(points) |> mean()
+  ) * (
+  mean(pulls[pulls$start_type != "Good", ]$is_offense_goal) -
+  mean(pulls[pulls$start_type == "Good", ]$is_offense_goal)
+  ), 2)
+  `
+  extra breaks per the average
+  `r round(full_data |>
+  group_by(gameID) |>
+  reframe(points = c(tail(home_team_score,1),
+                     tail(away_team_score, 1))) |>
+  pull(points) |>
+  mean(), 0)`
+ defense points played per match, but often^[Of the recorded matches, `r 100 * round((full_data |> group_by(gameID) |> summarise(score_diff_one = abs(tail(score_diff, 1)) == 1)) |> pull(score_diff_one) |> mean(), 1)`% ended in a score difference of one.] that one break is all your team needs. 
 
